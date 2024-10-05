@@ -1,0 +1,101 @@
+#include <iostream>
+#include <queue>
+#include <vector>
+#include <string>
+#include <unordered_map>
+
+using namespace std;
+
+// Node structure for Huffman tree
+struct Node {
+    char ch;
+    int freq;
+    Node *left, *right;
+
+    Node(char character, int frequency) 
+        : ch(character), freq(frequency), left(nullptr), right(nullptr) {}
+};
+
+// Comparator for priority queue
+struct compare {
+    bool operator()(Node* l, Node* r) {
+        return l->freq > r->freq;  // Min-heap based on frequency
+    }
+};
+
+// Function to generate Huffman codes
+void generateHuffmanCodes(Node* root, string code, unordered_map<char, string>& huffmanCodes) {
+    if (!root) return;
+
+    // If we reach a leaf node, store the character and its code
+    if (!root->left && !root->right) {
+        huffmanCodes[root->ch] = code;
+    }
+
+    // Traverse left and right subtrees
+    generateHuffmanCodes(root->left, code + "0", huffmanCodes);
+    generateHuffmanCodes(root->right, code + "1", huffmanCodes);
+}
+
+// Function to build the Huffman tree
+Node* buildHuffmanTree(const vector<char>& characters, const vector<int>& frequencies) {
+    priority_queue<Node*, vector<Node*>, compare> minHeap;
+
+    // Create a leaf node for each character and insert it into the priority queue
+    for (size_t i = 0; i < characters.size(); ++i) {
+        minHeap.push(new Node(characters[i], frequencies[i]));
+    }
+
+    // Iterate until the queue has more than one node
+    while (minHeap.size() > 1) {
+        Node *left = minHeap.top(); minHeap.pop();
+        Node *right = minHeap.top(); minHeap.pop();
+
+        // Create a new internal node with these two nodes as children
+        Node *top = new Node('\0', left->freq + right->freq);
+        top->left = left;
+        top->right = right;
+
+        // Add this node to the priority queue
+        minHeap.push(top);
+    }
+
+    // The remaining node is the root of the Huffman tree
+    return minHeap.top();
+}
+
+// Function to deallocate the Huffman tree
+void deleteHuffmanTree(Node* root) {
+    if (root) {
+        deleteHuffmanTree(root->left);
+        deleteHuffmanTree(root->right);
+        delete root;
+    }
+}
+
+// Function to print the Huffman codes
+void printHuffmanCodes(Node* root) {
+    unordered_map<char, string> huffmanCodes;
+    generateHuffmanCodes(root, "", huffmanCodes);
+    
+    for (const auto& pair : huffmanCodes) {
+        cout << pair.first << ": " << pair.second << endl;
+    }
+}
+
+// Main function
+int main() {
+    string S = "abcdef";
+    vector<int> f = {5, 9, 12, 13, 16, 45};
+
+    // Build the Huffman tree
+    Node* root = buildHuffmanTree(vector<char>(S.begin(), S.end()), f);
+
+    // Print Huffman codes
+    printHuffmanCodes(root);
+
+    // Clean up allocated memory
+    deleteHuffmanTree(root);
+
+    return 0;
+}
